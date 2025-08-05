@@ -27,7 +27,7 @@ export default function WelcomeTestPage({ onClose }: Props) {
         </p>
 
         <p className="text-base sm:text-lg text-indigo-300 italic">
-          When you're ready, answer the questions asked by our AI.
+          When you&apos;re ready, answer the questions asked by our AI.
         </p>
 
         <button
@@ -39,4 +39,4 @@ export default function WelcomeTestPage({ onClose }: Props) {
       </div>
     </div>
   );
-}
+} 

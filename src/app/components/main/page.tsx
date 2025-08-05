@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Script from 'next/script';
-import WelcomeTestPage from '../welcome/page';
+import WelcomeTestPage from '../welcome/WelcomeTest';
 import 'animate.css/animate.min.css';
 
 export default function MainPage() {
