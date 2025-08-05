@@ -10,7 +10,7 @@ export default function MainPage() {
   const handleClose = () => setShowPopup(false);
 
   return (
-    <div className="relative w-full max-w-6xl h-[80vh] mx-auto bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+    <div className="relative w-full max-w-6xl h-[80vh] sm:h-[83vh] mx-auto pb-20 bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white rounded-2xl overflow-y-scroll scrollbar-hidden shadow-2xl border border-white/10">
       
       {/* Background Image */}
       <div className="absolute inset-0 w-full h-full z-0">
@@ -27,7 +27,7 @@ export default function MainPage() {
       <div className="absolute -bottom-10 -right-10 w-72 h-72 bg-pink-500/20 rounded-full blur-2xl animate-pulse z-10" />
 
       {/* Main Content */}
-      <div className="h-full overflow-y-scroll scrollbar-hide px-4 py-6 sm:px-6 sm:py-8 space-y-10 z-10 relative">
+      <div className="h-full  overflow-y-scroll scrollbar-hidden  px-4 py-6 sm:px-6 sm:py-8 space-y-10 z-10 relative">
         
         {/* Overlayed Section - Logo + Title + Desc */}
         <div className="z-20 relative text-center space-y-4">

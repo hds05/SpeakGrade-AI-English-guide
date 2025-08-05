@@ -144,3 +144,15 @@ body {
 }
 
 /* ==================== /show effect==================== */
+
+/*==== Hide scrollbar while keeping scroll functionality====*/
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+/* ===== /Hide scrollbar while keeping scroll functionality===== */
