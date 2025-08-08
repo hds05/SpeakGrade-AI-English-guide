@@ -5,9 +5,11 @@ import Snowfall from './components/snowfall/page';
 import Loader from './components/loader/page';
 import MainPage from './components/main/page';
 import Header from './components/header/page';
+import Game from './components/game/Game';
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
+  const [gameCompleted, setGameCompleted] = useState(false); // ✅ Track game completion
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -29,10 +31,15 @@ export default function Home() {
       </div>
 
       {/* 🔵 Foreground - Scrollable Content */}
-      <div className="relative z-10 w-full h-full ">
+      <div className="relative z-10 w-full h-full overflow-y-auto">
         <Header />
         <main className="w-full max-w-6xl mx-auto px-4 py-6">
+          {/* ✅ Show Game until it's completed */}
+          {/* {!gameCompleted ? (
+            <Game/>
+          ) : ( */}
           <MainPage />
+          {/* )} */}
         </main>
       </div>
     </div>

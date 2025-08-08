@@ -6,10 +6,10 @@ import { useState } from 'react';
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi'; // HeroIcons for menu icons
 
 const navItems = [
-  { name: 'Home', href: '/main' },
+  { name: 'Home', href: '/' },
   { name: 'About', href: '/#' },
   { name: 'Features', href: '/#' },
-  // { name: 'Pricing', href: '/#' },
+  { name: 'Games', href: '/game' },
   { name: 'Contact', href: '/#' },
 ];
 
@@ -21,7 +21,7 @@ export default function Header() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="w-full sticky top-0 z-50 bg-white border-b shadow-sm">
+    <header className="w-full sticky top-0 z-500 bg-white border-b shadow-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link
