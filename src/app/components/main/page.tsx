@@ -17,7 +17,7 @@ export default function MainPage() {
   const handleClose = () => setShowPopup(false);
 
   useEffect(() => {
-    const hasUsedWidget = localStorage.getItem('widgetUsed');
+    const hasUsedWidget = localStorage.getItem('level1Completed_widget');
     let widgetTimer: NodeJS.Timeout;
     let widgetLoadDelay: NodeJS.Timeout;
 
@@ -33,7 +33,7 @@ export default function MainPage() {
       widgetTimer = setTimeout(() => {
         setShowWidget(false);
         setShowCompletion(true);
-        localStorage.setItem('widgetUsed', 'true');
+        localStorage.setItem('level1Completed_widget', 'true');
       }, 3 * 60 * 1000); // 3 minutes
     }, 1500); // Load delay
 
@@ -45,7 +45,7 @@ export default function MainPage() {
 
 
   return (
-    <div className="relative w-full max-w-6xl h-[80vh] sm:h-[83vh] mx-auto pb-20 bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white rounded-2xl overflow-y-scroll scrollbar-hidden shadow-2xl border border-white/10">
+    <div className="relative w-full max-w-6xl h-[80vh] sm:h-[83vh] mx-auto bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white rounded-2xl overflow-hidden shadow-2xl border border-white/10">
 
       {/* Background Image */}
       <div className="absolute inset-0 w-full h-full z-0">
@@ -64,7 +64,7 @@ export default function MainPage() {
       {/* Conditional Content */}
       {showCompletion ? (
         // ✅ Completion Section
-        <div className="relative z-20 text-center py-10 animate__animated animate__fadeInUp">
+        <div className="relative z-20 h-screen flex flex-col justify-center items-center text-center px-4 animate__animated animate__fadeInUp">
           <Confetti />
           <h2 className="text-3xl sm:text-4xl font-bold text-green-400 mb-2">🎉 Test Completed!</h2>
           <p className="text-base sm:text-lg text-gray-300">

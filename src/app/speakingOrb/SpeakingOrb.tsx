@@ -42,7 +42,7 @@ const AnimatedOrb: React.FC<{ isSpeaking: boolean }> = ({ isSpeaking }) => {
 
 const SpeakingOrb: React.FC<SpeakingOrbProps> = ({ isSpeaking }) => {
     return (
-        <div className="w-full h-[100px] sm:h-[200px] md:h-[300px] lg:h-[400px] ">
+        <div className="w-full h-[350px] lg:h-[400px] ">
             <Canvas camera={{ position: [0, 0, 6], fov: 60 }}>
                 <ambientLight intensity={0.6} />
                 <pointLight position={[5, 5, 5]} intensity={1} />

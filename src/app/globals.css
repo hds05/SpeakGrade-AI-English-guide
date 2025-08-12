@@ -116,7 +116,7 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* ====================show effect==================== */
+/* ====================snow effect==================== */
 .snowfall {
   position: absolute;
   width: 100%;
@@ -143,7 +143,7 @@ body {
   }
 }
 
-/* ==================== /show effect==================== */
+/* ==================== /snow effect==================== */
 
 /*==== Hide scrollbar while keeping scroll functionality====*/
 .scrollbar-hidden::-webkit-scrollbar {
@@ -157,6 +157,3 @@ body {
 
 /* ===== /Hide scrollbar while keeping scroll functionality===== */
 
-/* =====siri like visuals for our bot */
-
-/* =====siri like visuals for our bot */
