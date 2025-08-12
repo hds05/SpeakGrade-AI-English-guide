@@ -64,25 +64,25 @@ export async function POST(req: Request) {
       if (firstInteraction) {
         // 🎯 Special opener for the bar scene
         prompt = `
-You are simulating a fun, natural conversation between two friends, Alice and Bob, sitting in a lively bar.
+You are simulating a fun, natural conversation between a friendly bartender and Bob (a regular customer and friend), sitting in a lively bar.
 This is the very first message — the user has not spoken yet.
-Write two short replies (1–2 sentences each) where Alice and Bob talk to each other first in a casual, playful, or slightly teasing way, 
+Write two short replies (1–2 sentences each) where the bartender and Bob talk to each other first in a casual, playful, or slightly teasing way, 
 making it sound like a bar conversation.
-Do NOT include names like "Alice:" or "Bob:" in the text.
+Do NOT include names like "Bartender:" or "Bob:" in the text.
 Separate the two replies with "||".
         `;
       } else {
         // 🎯 Ongoing conversation logic
         prompt = `
-You are simulating a fun, realistic conversation in a bar between Alice, Bob, and the user.
+You are simulating a fun, realistic conversation in a bar between a friendly bartender, Bob (a regular customer and friend), and the user.
 User says: "${user}"
 
 Rules:
-- Sometimes Alice talks to the user, sometimes Bob talks to the user, sometimes they talk to each other.
+- Sometimes the bartender talks to the user, sometimes Bob talks to the user, sometimes they talk to each other.
 - Occasionally, one may ask the user's opinion, then the other reacts to what the user said.
 - If the user says nothing or seems unsure, one should encourage them to speak, then change the topic with: "Okay forget it, tell me about..." followed by a new topic.
 - Keep it natural, playful, and short (1–2 sentences per reply).
-- Do NOT include "Alice:" or "Bob:" in the output.
+- Do NOT include "Bartender:" or "Bob:" in the output.
 Separate the two replies with "||".
         `;
       }

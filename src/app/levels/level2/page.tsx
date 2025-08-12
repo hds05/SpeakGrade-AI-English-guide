@@ -19,6 +19,107 @@ export default function Level2() {
 
   // 🔊 Track all active audios to stop them instantly
   const activeAudiosRef = useRef<HTMLAudioElement[]>([]);
+  // Track if we should be listening
+  const shouldListenRef = useRef<boolean>(false);
+  // Health check timer for recognition
+  const healthCheckRef = useRef<NodeJS.Timeout | null>(null);
+  // Track if recognition is currently active
+  const isRecognitionActiveRef = useRef<boolean>(false);
+  // Track pending operations to cancel them
+  const pendingOperationsRef = useRef<Set<string>>(new Set());
+
+  // Helper function to cancel pending operations
+  const cancelPendingOperations = () => {
+    console.log(`Cancelling ${pendingOperationsRef.current.size} pending operations`);
+    pendingOperationsRef.current.clear();
+  };
+
+  // Helper function to stop all audio
+  const stopAllAudio = () => {
+    console.log(`Stopping ${activeAudiosRef.current.length} active audio elements`);
+    
+    activeAudiosRef.current.forEach((audio, index) => {
+      try {
+        audio.pause();
+        audio.src = "";
+        console.log(`Stopped audio ${index + 1}`);
+      } catch (e) {
+        console.warn(`Error stopping audio ${index + 1}:`, e);
+      }
+    });
+    
+    activeAudiosRef.current = [];
+    console.log("All audio elements stopped");
+  };
+
+  // Health check function to ensure recognition stays active
+  const startHealthCheck = () => {
+    if (healthCheckRef.current) {
+      clearInterval(healthCheckRef.current);
+    }
+    
+    healthCheckRef.current = setInterval(() => {
+      if (listening && shouldListenRef.current && recognitionRef.current) {
+        // Check if recognition is actually running
+        try {
+          // Try to restart if it seems inactive
+          if (!isRecognitionActiveRef.current) {
+            console.log("Health check: Restarting inactive recognition...");
+            recognitionRef.current.start();
+          }
+        } catch (err) {
+          console.warn("Health check: Failed to restart recognition:", err);
+        }
+      }
+    }, 5000); // Check every 5 seconds
+  };
+
+  // Helper function to play audio
+  const playAudio = (url: string): Promise<void> => {
+    return new Promise((resolve) => {
+      // Check if we should still be playing (conversation not ended)
+      if (!listening || !shouldListenRef.current) {
+        console.log("Audio playback skipped - conversation ended");
+        resolve();
+        return;
+      }
+
+      const audio = new Audio(url);
+      activeAudiosRef.current.push(audio);
+
+      audio.onended = () => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_) {}
+        activeAudiosRef.current = activeAudiosRef.current.filter((a) => a !== audio);
+        resolve();
+      };
+
+      audio.onerror = (e) => {
+        // Don't log errors when conversation has ended - this is expected
+        if (listening && shouldListenRef.current) {
+          console.warn("Audio playback error:", e);
+        }
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_) {}
+        activeAudiosRef.current = activeAudiosRef.current.filter((a) => a !== audio);
+        resolve();
+      };
+
+      audio.play().catch((err) => {
+        // Don't log errors when conversation has ended - this is expected
+        if (listening && shouldListenRef.current) {
+          console.warn("Audio play failed:", err);
+        }
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_) {}
+        activeAudiosRef.current = activeAudiosRef.current.filter((a) => a !== audio);
+        resolve();
+      });
+    });
+  };
 
   const VOICE_ALICE = "O4cGUVdAocn0z4EpQ9yF";
   const VOICE_BOB = "8sZxD42zKDvoEXNxBTdX";
@@ -54,13 +155,25 @@ export default function Level2() {
     rec.interimResults = false;
     rec.lang = "en-US";
 
+    rec.onstart = () => {
+      isRecognitionActiveRef.current = true;
+      console.log("Recognition started");
+    };
+
     rec.onresult = async (e: any) => {
+      // Don't process speech if conversation has ended
+      if (!listening || !shouldListenRef.current) {
+        console.log("Speech detected but conversation ended, ignoring...");
+        return;
+      }
+
       const txt = Array.from(e.results)
         .map((r: any) => r[0].transcript)
         .join(" ")
         .trim();
 
       if (txt && txt !== lastSpokenRef.current) {
+        console.log("Processing speech:", txt);
         lastSpokenRef.current = txt;
         setTranscript(txt);
         await handleSend(txt);
@@ -69,17 +182,66 @@ export default function Level2() {
     };
 
     rec.onend = () => {
-      if (listening && recognitionRef.current) {
-        recognitionRef.current.start();
+      isRecognitionActiveRef.current = false;
+      console.log("Recognition ended");
+      
+      // Only restart if we're supposed to be listening and not playing
+      if (listening && recognitionRef.current && shouldListenRef.current) {
+        console.log("Recognition ended, restarting...");
+        setTimeout(() => {
+          if (listening && recognitionRef.current && shouldListenRef.current) {
+            try {
+              recognitionRef.current.start();
+              console.log("Recognition restarted successfully");
+            } catch (err) {
+              console.warn("Failed to restart recognition:", err);
+            }
+          }
+        }, 100); // Small delay to ensure clean restart
       }
     };
 
     rec.onerror = (err: any) => {
-      console.error("SpeechRecognition error", err);
-      setListening(false);
+      // Only log errors if conversation is still active
+      if (listening) {
+        // Handle no-speech error gracefully - don't stop conversation
+        if (err && err.error === "no-speech") {
+          console.log("No speech detected, continuing to listen...");
+          // Don't stop listening, just let it continue
+          return;
+        }
+        
+        console.warn("SpeechRecognition error:", err);
+        // Only stop listening on critical errors
+        if (err && (err.error === "network" || err.error === "not-allowed")) {
+          setListening(false);
+        }
+      }
     };
 
     recognitionRef.current = rec;
+
+    // Cleanup function
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onstart = null;
+          recognitionRef.current.onend = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current = null;
+        } catch (_) {}
+      }
+      // Reset all refs
+      shouldListenRef.current = false;
+      isRecognitionActiveRef.current = false;
+      
+      // Clear timers
+      if (healthCheckRef.current) {
+        clearInterval(healthCheckRef.current);
+        healthCheckRef.current = null;
+      }
+    };
   }, [listening]);
 
   const startListening = () => {
@@ -89,27 +251,53 @@ export default function Level2() {
     }
     lastSpokenRef.current = "";
     setTranscript("");
-    setListening(true);
+    shouldListenRef.current = true;
     recognitionRef.current.start();
 
-    // ⏳ End after 30 seconds
-    timerRef.current = setTimeout(() => {
-      stopListening();
-      handleCompletion();
-    }, 30 * 1000);
+    // Start health check
+    startHealthCheck();
   };
 
-  const stopListening = () => {
-    if (recognitionRef.current) recognitionRef.current.stop();
+  const stopListening = (markComplete: boolean = false) => {
+    console.log("Stopping conversation...");
+    
+    // Update state FIRST to prevent new operations
     setListening(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
+    shouldListenRef.current = false;
+    
+    // Stop speech recognition
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (err) {
+        console.warn("Error stopping recognition:", err);
+      }
+    }
+    
+    // Clear timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
 
-    // ⛔ Stop all currently playing bot voices
-    activeAudiosRef.current.forEach((audio) => {
-      audio.pause();
-      audio.src = "";
-    });
-    activeAudiosRef.current = [];
+    // Stop health check
+    if (healthCheckRef.current) {
+      clearInterval(healthCheckRef.current);
+      healthCheckRef.current = null;
+    }
+
+    // ⛔ Stop all currently playing bot voices IMMEDIATELY
+    stopAllAudio();
+    
+    // Cancel any pending operations
+    cancelPendingOperations();
+
+    // Only mark as completed if explicitly requested
+    if (markComplete) {
+      handleCompletion();
+    }
+    
+    console.log("Conversation stopped successfully");
   };
 
   // ✅ Completion handler
@@ -118,81 +306,175 @@ export default function Level2() {
     setShowCompletion(true);
   };
 
-  async function handleSend(customPrompt?: string) {
+  async function handleSend(customPrompt?: string, firstInteraction: boolean = false) {
     const userText = customPrompt || transcript;
     if (!userText.trim()) return;
 
-    const resp = await fetch("/api/respond", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user: userText }),
-    });
+    try {
+      // Check if conversation is still active before proceeding
+      if (!listening || !shouldListenRef.current) {
+        console.log("Conversation ended, skipping handleSend");
+        return;
+      }
 
-    const data = await resp.json();
-    const aliceText = data.alice;
-    const bobText = data.bob;
+      console.log("Sending to API:", { user: userText, firstInteraction });
+      
+      const resp = await fetch("/api/level_2/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: userText, firstInteraction }),
+      });
 
-    const aliceUrl = await getTTSAudio(aliceText, VOICE_ALICE);
-    const bobUrl = await getTTSAudio(bobText, VOICE_BOB);
+      if (!resp.ok) {
+        throw new Error(`API error: ${resp.status}`);
+      }
 
-    await playWithOverlap(aliceUrl, bobUrl, 0);
+      const data = await resp.json();
+      console.log("API response:", data);
+      
+      const aliceText = data.alice;
+      const bobText = data.bob;
+
+      if (!aliceText && !bobText) {
+        console.warn("No text received from API");
+        return;
+      }
+
+      // Check again if conversation is still active before playing audio
+      if (!listening) {
+        console.log("Conversation ended before audio playback");
+        return;
+      }
+
+      const aliceUrl = aliceText ? await getTTSAudio(aliceText, VOICE_ALICE) : null;
+      const bobUrl = bobText ? await getTTSAudio(bobText, VOICE_BOB) : null;
+
+      // Play both audios sequentially
+      await playSequence([aliceUrl, bobUrl]);
+    } catch (error) {
+      // Only log error if conversation is still active
+      if (listening) {
+        console.error("Error in handleSend:", error);
+      }
+    }
   }
 
   async function startBotConversation() {
-    await handleSend("Start a fun conversation with the user");
+    console.log("Starting bot conversation...");
+    try {
+      // Check if conversation is still active
+      if (!listening || !shouldListenRef.current) {
+        console.log("Conversation ended, skipping bot conversation");
+        return;
+      }
+      
+      await handleSend("START_CONVO", true); // true = firstInteraction
+      console.log("Bot conversation started successfully");
+    } catch (error) {
+      console.error("Failed to start bot conversation:", error);
+    }
   }
 
   async function getTTSAudio(text: string, voiceId: string) {
-    const res = await fetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, voice: voiceId }),
-    });
+    try {
+      // Check if conversation is still active
+      if (!listening) {
+        console.log("Conversation ended, skipping TTS");
+        return null;
+      }
 
-    if (!res.ok) throw new Error(await res.text());
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
+      const res = await fetch("/api/level_2/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, voice: voiceId }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.warn("TTS API error:", errorText);
+        return null;
+      }
+
+      const blob = await res.blob();
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      // Only log error if conversation is still active
+      if (listening) {
+        console.warn("TTS error:", error);
+      }
+      return null;
+    }
   }
 
-  function playWithOverlap(firstUrl: string, secondUrl: string, overlapMs: number) {
-    return new Promise<void>((resolve, reject) => {
-      const firstAudio = new Audio(firstUrl);
-      const secondAudio = new Audio(secondUrl);
-
-      // Track both audios so we can stop them later
-      activeAudiosRef.current.push(firstAudio, secondAudio);
-
-      let overlapTimer: NodeJS.Timeout;
-
-      firstAudio.onplay = () => {
-        const estimatedDuration = firstAudio.duration * 1000;
-        if (!isNaN(estimatedDuration) && estimatedDuration > overlapMs) {
-          overlapTimer = setTimeout(() => {
-            secondAudio.play().catch(reject);
-          }, Math.max(0, estimatedDuration - overlapMs));
-        } else {
-          firstAudio.onended = () => {
-            secondAudio.play().catch(reject);
-          };
-        }
-      };
-
-      secondAudio.onended = () => {
-        URL.revokeObjectURL(firstUrl);
-        URL.revokeObjectURL(secondUrl);
-        clearTimeout(overlapTimer);
-        resolve();
-      };
-
-      firstAudio.onerror = reject;
-      secondAudio.onerror = reject;
-
-      firstAudio.play().catch(reject);
-    });
+  async function playSequence(urls: (string | null | undefined)[]) {
+    // Check if conversation is still active
+    if (!listening || !shouldListenRef.current) {
+      console.log("Conversation ended, skipping audio sequence");
+      return;
+    }
+    
+    console.log(`Starting audio sequence with ${urls.filter(u => u).length} audio files`);
+    
+    // Ensure preceding audios not playing
+    stopAllAudio();
+    
+    for (const u of urls) {
+      // Check state before each audio
+      if (u && listening && shouldListenRef.current) {
+        await playAudio(u);
+      } else if (!listening || !shouldListenRef.current) {
+        console.log("Conversation ended during audio sequence, stopping");
+        break;
+      }
+    }
+    
+    console.log("Audio sequence completed");
   }
+
+  // function playWithOverlap(firstUrl: string, secondUrl: string, overlapMs: number) {
+  //   return new Promise<void>((resolve, reject) => {
+  //     const firstAudio = new Audio(firstUrl);
+  //     const secondAudio = new Audio(secondUrl);
+
+  //     // Track both audios so we can stop them later
+  //     activeAudiosRef.current.push(firstAudio, secondAudio);
+
+  //     let overlapTimer: NodeJS.Timeout;
+
+  //     firstAudio.onplay = () => {
+  //       const estimatedDuration = firstAudio.duration * 1000;
+  //       if (!isNaN(estimatedDuration) && estimatedDuration > overlapMs) {
+  //         overlapTimer = setTimeout(() => {
+  //           secondAudio.play().catch(reject);
+  //         }, Math.max(0, estimatedDuration - overlapMs));
+  //       } else {
+  //         firstAudio.onended = () => {
+  //           secondAudio.play().catch(reject);
+  //         };
+  //       }
+  //     };
+
+  //     secondAudio.onended = () => {
+  //       URL.revokeObjectURL(firstUrl);
+  //       URL.revokeObjectURL(secondUrl);
+  //       clearTimeout(overlapTimer);
+  //       resolve();
+  //     };
+
+  //     firstAudio.onerror = reject;
+  //     secondAudio.onerror = reject;
+
+  //     firstAudio.play().catch(reject);
+  //   });
+  // }
 
   const handleStartConversation = async () => {
+    // Immediately set listening to true to show "End Conversation" button
+    setListening(true);
+    shouldListenRef.current = true;
+    // Start the bot conversation and then start listening
     await startBotConversation();
+    // Start listening after bot conversation
     startListening();
   };
 
@@ -255,17 +537,16 @@ export default function Level2() {
                 {!listening ? (
                   <button
                     onClick={handleStartConversation}
-                    className="px-6 py-2 sm:py-3 bg-green-500 hover:bg-green-600 rounded-full font-semibold text-sm sm:text-base"
+                    className="px-6 py-2 sm:py-3 bg-green-500 hover:bg-green-600 rounded-full font-semibold text-sm sm:text-base hover:cursor-pointer"
                   >
                     Start Conversation
                   </button>
                 ) : (
                   <button
                     onClick={() => {
-                      stopListening();
-                      handleCompletion();
+                      stopListening(false); // false = don't mark as completed
                     }}
-                    className="px-6 py-2 sm:py-3 bg-red-500 hover:bg-red-600 rounded-full font-semibold text-sm sm:text-base"
+                    className="px-6 py-2 sm:py-3 bg-red-500 hover:bg-red-600 rounded-full font-semibold text-sm sm:text-base hover:cursor-pointer"
                   >
                     End Conversation
                   </button>
