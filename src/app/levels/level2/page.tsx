@@ -30,14 +30,18 @@ export default function Level2() {
 
   // Helper function to cancel pending operations
   const cancelPendingOperations = () => {
-    console.log(`Cancelling ${pendingOperationsRef.current.size} pending operations`);
+    console.log(
+      `Cancelling ${pendingOperationsRef.current.size} pending operations`
+    );
     pendingOperationsRef.current.clear();
   };
 
   // Helper function to stop all audio
   const stopAllAudio = () => {
-    console.log(`Stopping ${activeAudiosRef.current.length} active audio elements`);
-    
+    console.log(
+      `Stopping ${activeAudiosRef.current.length} active audio elements`
+    );
+
     activeAudiosRef.current.forEach((audio, index) => {
       try {
         audio.pause();
@@ -47,7 +51,7 @@ export default function Level2() {
         console.warn(`Error stopping audio ${index + 1}:`, e);
       }
     });
-    
+
     activeAudiosRef.current = [];
     console.log("All audio elements stopped");
   };
@@ -57,7 +61,7 @@ export default function Level2() {
     if (healthCheckRef.current) {
       clearInterval(healthCheckRef.current);
     }
-    
+
     healthCheckRef.current = setInterval(() => {
       if (listening && shouldListenRef.current && recognitionRef.current) {
         // Check if recognition is actually running
@@ -91,7 +95,9 @@ export default function Level2() {
         try {
           URL.revokeObjectURL(url);
         } catch (_) {}
-        activeAudiosRef.current = activeAudiosRef.current.filter((a) => a !== audio);
+        activeAudiosRef.current = activeAudiosRef.current.filter(
+          (a) => a !== audio
+        );
         resolve();
       };
 
@@ -103,7 +109,9 @@ export default function Level2() {
         try {
           URL.revokeObjectURL(url);
         } catch (_) {}
-        activeAudiosRef.current = activeAudiosRef.current.filter((a) => a !== audio);
+        activeAudiosRef.current = activeAudiosRef.current.filter(
+          (a) => a !== audio
+        );
         resolve();
       };
 
@@ -115,7 +123,9 @@ export default function Level2() {
         try {
           URL.revokeObjectURL(url);
         } catch (_) {}
-        activeAudiosRef.current = activeAudiosRef.current.filter((a) => a !== audio);
+        activeAudiosRef.current = activeAudiosRef.current.filter(
+          (a) => a !== audio
+        );
         resolve();
       });
     });
@@ -184,7 +194,7 @@ export default function Level2() {
     rec.onend = () => {
       isRecognitionActiveRef.current = false;
       console.log("Recognition ended");
-      
+
       // Only restart if we're supposed to be listening and not playing
       if (listening && recognitionRef.current && shouldListenRef.current) {
         console.log("Recognition ended, restarting...");
@@ -210,7 +220,7 @@ export default function Level2() {
           // Don't stop listening, just let it continue
           return;
         }
-        
+
         console.warn("SpeechRecognition error:", err);
         // Only stop listening on critical errors
         if (err && (err.error === "network" || err.error === "not-allowed")) {
@@ -235,7 +245,7 @@ export default function Level2() {
       // Reset all refs
       shouldListenRef.current = false;
       isRecognitionActiveRef.current = false;
-      
+
       // Clear timers
       if (healthCheckRef.current) {
         clearInterval(healthCheckRef.current);
@@ -260,11 +270,11 @@ export default function Level2() {
 
   const stopListening = (markComplete: boolean = false) => {
     console.log("Stopping conversation...");
-    
+
     // Update state FIRST to prevent new operations
     setListening(false);
     shouldListenRef.current = false;
-    
+
     // Stop speech recognition
     if (recognitionRef.current) {
       try {
@@ -273,7 +283,7 @@ export default function Level2() {
         console.warn("Error stopping recognition:", err);
       }
     }
-    
+
     // Clear timer
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -288,7 +298,7 @@ export default function Level2() {
 
     // ⛔ Stop all currently playing bot voices IMMEDIATELY
     stopAllAudio();
-    
+
     // Cancel any pending operations
     cancelPendingOperations();
 
@@ -296,7 +306,7 @@ export default function Level2() {
     if (markComplete) {
       handleCompletion();
     }
-    
+
     console.log("Conversation stopped successfully");
   };
 
@@ -306,7 +316,10 @@ export default function Level2() {
     setShowCompletion(true);
   };
 
-  async function handleSend(customPrompt?: string, firstInteraction: boolean = false) {
+  async function handleSend(
+    customPrompt?: string,
+    firstInteraction: boolean = false
+  ) {
     const userText = customPrompt || transcript;
     if (!userText.trim()) return;
 
@@ -318,7 +331,7 @@ export default function Level2() {
       }
 
       console.log("Sending to API:", { user: userText, firstInteraction });
-      
+
       const resp = await fetch("/api/level_2/respond", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -331,7 +344,7 @@ export default function Level2() {
 
       const data = await resp.json();
       console.log("API response:", data);
-      
+
       const aliceText = data.alice;
       const bobText = data.bob;
 
@@ -346,7 +359,9 @@ export default function Level2() {
         return;
       }
 
-      const aliceUrl = aliceText ? await getTTSAudio(aliceText, VOICE_ALICE) : null;
+      const aliceUrl = aliceText
+        ? await getTTSAudio(aliceText, VOICE_ALICE)
+        : null;
       const bobUrl = bobText ? await getTTSAudio(bobText, VOICE_BOB) : null;
 
       // Play both audios sequentially
@@ -367,7 +382,7 @@ export default function Level2() {
         console.log("Conversation ended, skipping bot conversation");
         return;
       }
-      
+
       await handleSend("START_CONVO", true); // true = firstInteraction
       console.log("Bot conversation started successfully");
     } catch (error) {
@@ -412,12 +427,14 @@ export default function Level2() {
       console.log("Conversation ended, skipping audio sequence");
       return;
     }
-    
-    console.log(`Starting audio sequence with ${urls.filter(u => u).length} audio files`);
-    
+
+    console.log(
+      `Starting audio sequence with ${urls.filter((u) => u).length} audio files`
+    );
+
     // Ensure preceding audios not playing
     stopAllAudio();
-    
+
     for (const u of urls) {
       // Check state before each audio
       if (u && listening && shouldListenRef.current) {
@@ -427,7 +444,7 @@ export default function Level2() {
         break;
       }
     }
-    
+
     console.log("Audio sequence completed");
   }
 
@@ -505,7 +522,7 @@ export default function Level2() {
 
           {showCompletion ? (
             <div className="relative z-20 w-full h-screen flex flex-col justify-center items-center text-center px-4 animate__animated animate__fadeInUp">
-              <Confetti className="w-full h-full"/>
+              <Confetti className="w-full h-full" />
               <h2 className="text-3xl mt-10 sm:text-4xl font-bold text-green-400 mb-2">
                 🎉 Conversation Completed!
               </h2>
@@ -526,10 +543,10 @@ export default function Level2() {
               </h1>
 
               <p className="text-sm sm:text-base text-gray-300 max-w-md bg-gray-900 sm:p-3 px-8 py-3 rounded-[50px]">
-                📍 <strong>Scene:</strong> You’re at a lively bar where Alice
-                and Bob are deep in conversation. They're witty, curious, and
-                love getting you involved. Just have fun and join in like one of
-                the gang.
+                📍 <strong>Scene:</strong> You’re at a lively bar where a
+                friendly bartender and Bob, a regular customer, are chatting
+                casually. They’re playful, relaxed, and love when others join
+                the conversation — so jump in and enjoy the banter.
               </p>
 
               <SpeakingOrb isSpeaking={listening} />
