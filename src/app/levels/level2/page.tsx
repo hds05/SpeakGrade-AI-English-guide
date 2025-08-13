@@ -173,43 +173,42 @@ export default function Level2() {
 
     rec.onresult = (e: any) => {
       if (!listening || !shouldListenRef.current) return;
-    
+
       // Combine all transcripts
       const txt = Array.from(e.results)
         .map((r: any) => r[0].transcript)
         .join(" ")
         .trim();
-    
+
       if (!txt || txt === lastSpokenRef.current) return;
-    
+
       // Update last spoken immediately
       lastSpokenRef.current = txt;
       setTranscript(txt);
-    
+
       // Debounce sending to API
       if (timerRef.current) clearTimeout(timerRef.current);
-    
+
       timerRef.current = setTimeout(async () => {
         if (!listening || !shouldListenRef.current) return;
-    
+
         // Cancel any pending operations
         cancelPendingOperations();
-    
+
         // Track this operation
         const opId = crypto.randomUUID();
         pendingOperationsRef.current.add(opId);
-    
+
         try {
           await handleSend(txt);
         } finally {
           pendingOperationsRef.current.delete(opId);
         }
-    
+
         // Reset transcript after sending
         setTranscript("");
       }, 700); // 700ms after last speech chunk
     };
-    
 
     rec.onend = () => {
       isRecognitionActiveRef.current = false;
@@ -342,49 +341,47 @@ export default function Level2() {
   ) {
     const userText = customPrompt || transcript;
     if (!userText.trim()) return;
-  
+
     try {
       if (!listening || !shouldListenRef.current) return;
-  
+
       const resp = await fetch("/api/level_2/respond", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user: userText, firstInteraction }),
       });
-  
+
       if (!resp.ok) throw new Error(`API error: ${resp.status}`);
-  
+
       const data = await resp.json();
       console.log("API response:", data);
-  
+
       // Extract and clean text (ensure correct speaker)
       const bartenderText = data.bartender?.trim() || "";
       const bobText = data.bob?.trim() || "";
-  
+
       if (!bartenderText && !bobText) return;
       if (!listening) return;
-  
+
       // Generate TTS audio for each speaker separately
       const urls: (string | null)[] = [];
-  
+
       if (bartenderText) {
         const bartenderUrl = await getTTSAudio(bartenderText, VOICE_BARTENDER);
         urls.push(bartenderUrl);
       }
-  
+
       if (bobText) {
         const bobUrl = await getTTSAudio(bobText, VOICE_BOB);
         urls.push(bobUrl);
       }
-  
+
       // Play voices in the correct order (bartender first, then bob)
       await playSequence(urls);
     } catch (error) {
       if (listening) console.error("Error in handleSend:", error);
     }
   }
-  
-  
 
   async function startBotConversation() {
     console.log("Starting bot conversation...");
@@ -502,34 +499,36 @@ export default function Level2() {
       // Immediately set listening to true to show "End Conversation" button
       setListening(true);
       shouldListenRef.current = true;
-  
+
       // 🎯 Step 1: Play greeting immediately
       const greeting = "Welcome sir....... how are you??";
       const voiceId = "tQ4MEZFJOzsahSEEZtHK"; // replace with your ElevenLabs voice ID
-  
-      const ttsRes = await axios.post("/api/level_2/tts", {
-        text: greeting,
-        voice: voiceId, // ✅ matches backend's expected param
-      }, {
-        responseType: "arraybuffer", // so we get audio data
-      });
-  
+
+      const ttsRes = await axios.post(
+        "/api/level_2/tts",
+        {
+          text: greeting,
+          voice: voiceId, // ✅ matches backend's expected param
+        },
+        {
+          responseType: "arraybuffer", // so we get audio data
+        }
+      );
+
       const audioBlob = new Blob([ttsRes.data], { type: "audio/mpeg" });
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       await audio.play();
-  
+
       // 🎯 Step 2: Start bot conversation
       await startBotConversation();
-  
+
       // 🎯 Step 3: Start listening
       startListening();
     } catch (err) {
       console.error("Error starting conversation:", err);
     }
   };
-  
-  
 
   return (
     <div className="relative w-full min-h-screen  bg-black text-white">
@@ -578,11 +577,18 @@ export default function Level2() {
                 Bar Conversation — Level 2
               </h1>
 
-              <p className="text-sm sm:text-base text-gray-300 max-w-md bg-gray-900 sm:p-3 px-8 py-3 rounded-[50px]">
+              {/* <p className="text-sm sm:text-base text-gray-300 max-w-md bg-gray-900 sm:p-3 px-8 py-3 rounded-[50px]">
                 📍 <strong>Scene:</strong> You’re at a lively bar where a
                 friendly bartender and Bob, a regular customer, are chatting
                 casually. They’re playful, relaxed, and love when others join
                 the conversation — so jump in and enjoy the banter.
+              </p> */}
+              <p className="text-sm sm:text-base text-gray-300 max-w-md bg-gray-900 sm:p-3 px-8 py-3 rounded-[50px]">
+                📍 <strong>Scene:</strong> You’ve just stepped into a lively
+                bar. The friendly bartender greets you warmly, and your buddy
+                Bob is already sitting there with a drink in hand. They’re
+                playful, relaxed, and love when others join the conversation —
+                so jump in and enjoy the banter.
               </p>
 
               <SpeakingOrb isSpeaking={listening} />
