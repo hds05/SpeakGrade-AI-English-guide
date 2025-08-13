@@ -1,47 +1,43 @@
 // src/app/api/tts/route.ts
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
     const { text, voice } = await req.json();
-    if (!text || !voice) {
-      return NextResponse.json({ error: 'missing text or voice' }, { status: 400 });
-    }
-    const ELEVEN_KEY = process.env.ELEVENLABS_API_KEY;
-    if (!ELEVEN_KEY) {
-      return NextResponse.json({ error: 'server missing ElevenLabs key' }, { status: 500 });
+
+    if (!process.env.ELEVENLABS_API_KEY) {
+      return NextResponse.json({ error: "No ElevenLabs API key" }, { status: 500 });
     }
 
-    const elevenRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
-      method: 'POST',
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
+      method: "POST",
       headers: {
-        'xi-api-key': ELEVEN_KEY,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        "xi-api-key": process.env.ELEVENLABS_API_KEY!,
       },
       body: JSON.stringify({
         text,
-        model: "eleven_multilingual_v1",
-        voice_settings: {
-          stability: 1.0,
-          similarity_boost: 1,
-          speaking_rate: 0.9 // make it slightly faster
-        }
+        voice,
+        model_id: "eleven_multilingual_v1",
       }),
     });
 
-    if (!elevenRes.ok) {
-      const errText = await elevenRes.text();
-      console.error('eleven tts error', errText);
-      return new Response(errText, { status: elevenRes.status });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("ElevenLabs TTS error:", errorText);
+      return NextResponse.json({ error: errorText }, { status: 500 });
     }
 
-    const buffer = await elevenRes.arrayBuffer();
-    return new Response(buffer, {
+    const arrayBuffer = await res.arrayBuffer();
+    return new Response(arrayBuffer, {
       status: 200,
-      headers: { 'Content-Type': 'audio/mpeg' },
+      headers: { "Content-Type": "audio/mpeg" },
     });
   } catch (err: any) {
-    console.error('tts error', err);
-    return NextResponse.json({ error: err.message || 'tts server error' }, { status: 500 });
+    console.error("TTS route error:", err);
+    return NextResponse.json(
+      { error: err.message || "server error" },
+      { status: 500 }
+    );
   }
 }

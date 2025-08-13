@@ -51,71 +51,63 @@
 //   }
 // }
 
-// src/app/api/respond/route.ts
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
     const { user, firstInteraction } = await req.json();
 
-    if (process.env.OPENAI_API_KEY) {
-      let prompt = '';
-
-      if (firstInteraction) {
-        // 🎯 Special opener for the bar scene
-        prompt = `
-You are simulating a fun, natural conversation between a friendly bartender and Bob (a regular customer and friend), sitting in a lively bar.
-This is the very first message — the user has not spoken yet.
-Write two short replies (1–2 sentences each) where the bartender and Bob talk to each other first in a casual, playful, or slightly teasing way, 
-making it sound like a bar conversation.
-Do NOT include names like "Bartender:" or "Bob:" in the text.
-Separate the two replies with "||".
-        `;
-      } else {
-        // 🎯 Ongoing conversation logic
-        prompt = `
-You are simulating a fun, realistic conversation in a bar between a friendly bartender, Bob (a regular customer and friend), and the user.
-User says: "${user}"
-
-Rules:
-- Sometimes the bartender talks to the user, sometimes Bob talks to the user, sometimes they talk to each other.
-- Occasionally, one may ask the user's opinion, then the other reacts to what the user said.
-- If the user says nothing or seems unsure, one should encourage them to speak, then change the topic with: "Okay forget it, tell me about..." followed by a new topic.
-- Keep it natural, playful, and short (1–2 sentences per reply).
-- Do NOT include "Bartender:" or "Bob:" in the output.
-Separate the two replies with "||".
-        `;
-      }
-
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'system', content: prompt }],
-          max_tokens: 150,
-          temperature: 0.9,
-        }),
-      });
-
-      const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content ?? '';
-
-      // Split into Alice/Bob parts
-      const parts = text.split('||').map((s: string) => s.trim());
-      const alice = parts[0] || '';
-      const bob = parts[1] || '';
-
-      return NextResponse.json({ alice, bob });
-    } else {
-      // No API key — fallback
-      const alice = `That sounds interesting — what happened next?`;
-      const bob = `Haha, I’d love to hear more about that.`;
-      return NextResponse.json({ alice, bob });
+    if (!process.env.OPENAI_API_KEY) {
+      // Fallback if no API key
+      const bartender = `What kind of drink would you like, Sir?`;
+      const bob = firstInteraction
+        ? `Hey buddy, great to meet you!`
+        : `Haha, tell me more about that, buddy.`;
+      return NextResponse.json({ bartender, bob });
     }
+
+    let prompt = `
+    Simulate a natural, fun bar conversation between:
+    - Bartender (calls user "Sir", speaks only about drinks or when asked)
+    - Bob (calls user "buddy")
+    - User (New participant)
+    
+    Rules:
+    - Always output exactly TWO lines per reply:
+      Bartender: <bartender line>
+      Bob: <bob line>
+    - Keep each line short (1–2 sentences).
+    - Bartender should speak first.
+    ${firstInteraction
+      ? `- On Bob's first reply, he MUST greet the user warmly before continuing (example: "Hey buddy, great to see you!")`
+      : `- Bob should respond naturally without a greeting.`}
+    User just said: "${user}"
+    `;
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'system', content: prompt }],
+        max_tokens: 150,
+        temperature: 0.9,
+      }),
+    });
+
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content ?? '';
+
+    const bartenderMatch = text.match(/Bartender:\s*([^\n]+)/i);
+    const bobMatch = text.match(/Bob:\s*([^\n]+)/i);
+
+    const bartender = bartenderMatch?.[1]?.trim() || '';
+    const bob = bobMatch?.[1]?.trim() || '';
+
+    return NextResponse.json({ bartender, bob });
   } catch (err: any) {
     console.error('respond error', err);
     return NextResponse.json(

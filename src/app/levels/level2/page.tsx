@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import Header from "@/app/components/header/page";
 import SpeakingOrb from "@/app/speakingOrb/SpeakingOrb";
 import React, { useEffect, useRef, useState } from "react";
@@ -131,7 +132,7 @@ export default function Level2() {
     });
   };
 
-  const VOICE_ALICE = "O4cGUVdAocn0z4EpQ9yF";
+  const VOICE_BARTENDER = "tQ4MEZFJOzsahSEEZtHK";
   const VOICE_BOB = "8sZxD42zKDvoEXNxBTdX";
 
   useEffect(() => {
@@ -170,26 +171,45 @@ export default function Level2() {
       console.log("Recognition started");
     };
 
-    rec.onresult = async (e: any) => {
-      // Don't process speech if conversation has ended
-      if (!listening || !shouldListenRef.current) {
-        console.log("Speech detected but conversation ended, ignoring...");
-        return;
-      }
-
+    rec.onresult = (e: any) => {
+      if (!listening || !shouldListenRef.current) return;
+    
+      // Combine all transcripts
       const txt = Array.from(e.results)
         .map((r: any) => r[0].transcript)
         .join(" ")
         .trim();
-
-      if (txt && txt !== lastSpokenRef.current) {
-        console.log("Processing speech:", txt);
-        lastSpokenRef.current = txt;
-        setTranscript(txt);
-        await handleSend(txt);
+    
+      if (!txt || txt === lastSpokenRef.current) return;
+    
+      // Update last spoken immediately
+      lastSpokenRef.current = txt;
+      setTranscript(txt);
+    
+      // Debounce sending to API
+      if (timerRef.current) clearTimeout(timerRef.current);
+    
+      timerRef.current = setTimeout(async () => {
+        if (!listening || !shouldListenRef.current) return;
+    
+        // Cancel any pending operations
+        cancelPendingOperations();
+    
+        // Track this operation
+        const opId = crypto.randomUUID();
+        pendingOperationsRef.current.add(opId);
+    
+        try {
+          await handleSend(txt);
+        } finally {
+          pendingOperationsRef.current.delete(opId);
+        }
+    
+        // Reset transcript after sending
         setTranscript("");
-      }
+      }, 700); // 700ms after last speech chunk
     };
+    
 
     rec.onend = () => {
       isRecognitionActiveRef.current = false;
@@ -322,57 +342,49 @@ export default function Level2() {
   ) {
     const userText = customPrompt || transcript;
     if (!userText.trim()) return;
-
+  
     try {
-      // Check if conversation is still active before proceeding
-      if (!listening || !shouldListenRef.current) {
-        console.log("Conversation ended, skipping handleSend");
-        return;
-      }
-
-      console.log("Sending to API:", { user: userText, firstInteraction });
-
+      if (!listening || !shouldListenRef.current) return;
+  
       const resp = await fetch("/api/level_2/respond", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user: userText, firstInteraction }),
       });
-
-      if (!resp.ok) {
-        throw new Error(`API error: ${resp.status}`);
-      }
-
+  
+      if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+  
       const data = await resp.json();
       console.log("API response:", data);
-
-      const aliceText = data.alice;
-      const bobText = data.bob;
-
-      if (!aliceText && !bobText) {
-        console.warn("No text received from API");
-        return;
+  
+      // Extract and clean text (ensure correct speaker)
+      const bartenderText = data.bartender?.trim() || "";
+      const bobText = data.bob?.trim() || "";
+  
+      if (!bartenderText && !bobText) return;
+      if (!listening) return;
+  
+      // Generate TTS audio for each speaker separately
+      const urls: (string | null)[] = [];
+  
+      if (bartenderText) {
+        const bartenderUrl = await getTTSAudio(bartenderText, VOICE_BARTENDER);
+        urls.push(bartenderUrl);
       }
-
-      // Check again if conversation is still active before playing audio
-      if (!listening) {
-        console.log("Conversation ended before audio playback");
-        return;
+  
+      if (bobText) {
+        const bobUrl = await getTTSAudio(bobText, VOICE_BOB);
+        urls.push(bobUrl);
       }
-
-      const aliceUrl = aliceText
-        ? await getTTSAudio(aliceText, VOICE_ALICE)
-        : null;
-      const bobUrl = bobText ? await getTTSAudio(bobText, VOICE_BOB) : null;
-
-      // Play both audios sequentially
-      await playSequence([aliceUrl, bobUrl]);
+  
+      // Play voices in the correct order (bartender first, then bob)
+      await playSequence(urls);
     } catch (error) {
-      // Only log error if conversation is still active
-      if (listening) {
-        console.error("Error in handleSend:", error);
-      }
+      if (listening) console.error("Error in handleSend:", error);
     }
   }
+  
+  
 
   async function startBotConversation() {
     console.log("Starting bot conversation...");
@@ -486,14 +498,38 @@ export default function Level2() {
   // }
 
   const handleStartConversation = async () => {
-    // Immediately set listening to true to show "End Conversation" button
-    setListening(true);
-    shouldListenRef.current = true;
-    // Start the bot conversation and then start listening
-    await startBotConversation();
-    // Start listening after bot conversation
-    startListening();
+    try {
+      // Immediately set listening to true to show "End Conversation" button
+      setListening(true);
+      shouldListenRef.current = true;
+  
+      // 🎯 Step 1: Play greeting immediately
+      const greeting = "Welcome sir....... how are you??";
+      const voiceId = "tQ4MEZFJOzsahSEEZtHK"; // replace with your ElevenLabs voice ID
+  
+      const ttsRes = await axios.post("/api/level_2/tts", {
+        text: greeting,
+        voice: voiceId, // ✅ matches backend's expected param
+      }, {
+        responseType: "arraybuffer", // so we get audio data
+      });
+  
+      const audioBlob = new Blob([ttsRes.data], { type: "audio/mpeg" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      await audio.play();
+  
+      // 🎯 Step 2: Start bot conversation
+      await startBotConversation();
+  
+      // 🎯 Step 3: Start listening
+      startListening();
+    } catch (err) {
+      console.error("Error starting conversation:", err);
+    }
   };
+  
+  
 
   return (
     <div className="relative w-full min-h-screen  bg-black text-white">
