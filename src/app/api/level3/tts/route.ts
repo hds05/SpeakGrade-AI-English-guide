@@ -1,54 +1,61 @@
-// src/app/api/level3/tts/route.ts
+// ✅ src/app/api/level3/tts/route.ts
 import { NextResponse } from "next/server";
 
 const VOICES: Record<string, string> = {
-  int1: "VOICE_ID_1", // replace with your actual voice ID
-  int2: "VOICE_ID_2",
-  int3: "VOICE_ID_3",
+  Alice: "BZgkqPqms7Kj9ulSkVzn",
+  Bob: "NMbn4FNN0acONjKLsueJ",
+  Charlie: "WF4i4ZlVIKR1m1lLbJji",
 };
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
-    const url = new URL(req.url);
-    const speaker = url.searchParams.get("speaker") ?? "int1";
-    const text = url.searchParams.get("text") ?? "";
+    let body = await req.json();
+    let speaker = body.speaker ?? body.conversation?.speaker ?? "Alice";
+    let text = body.text ?? body.conversation?.text ?? "";
 
-    if (!text) return NextResponse.json({ error: "Missing text" }, { status: 400 });
+    console.log("📥 /tts received:", { speaker, text });
 
-    const voiceId = VOICES[speaker] ?? VOICES["int1"];
+    if (!text.trim()) {
+      return NextResponse.json({ error: "Missing text" }, { status: 400 });
+    }
 
-    // Proxy request to ElevenLabs TTS (server-side)
-    const elevenRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: "POST",
-      headers: {
-        "xi-api-key": process.env.ELEVENLABS_API_KEY ?? "",
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      // body shape depends on ElevenLabs specs (this works with their standard TTS endpoint)
-      body: JSON.stringify({
-        text,
-        // optional voice settings — tweak if needed
-        voice_settings: { stability: 0.4, similarity_boost: 0.7 },
-      }),
-    });
+    const voiceId = VOICES[speaker] ?? VOICES.Alice;
+    console.log(`🎙️ Using voice for: ${speaker} → ${voiceId}`);
+
+    const elevenRes = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": process.env.ELEVENLABS_API_KEY ?? "",
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+        },
+        body: JSON.stringify({
+          text,
+          voice_settings: { stability: 0.4, similarity_boost: 0.7 },
+        }),
+      }
+    );
 
     if (!elevenRes.ok) {
       const t = await elevenRes.text();
-      console.error("elevenlabs error", t);
+      console.error("❌ ElevenLabs error:", t);
       return NextResponse.json({ error: "ElevenLabs failed" }, { status: 502 });
     }
 
-    // Stream the audio back to the browser preserving content-type
-    const headers = new Headers();
-    const contentType = elevenRes.headers.get("content-type") || "audio/mpeg";
-    headers.set("Content-Type", contentType);
-    // Prevent caching
-    headers.set("Cache-Control", "no-store");
+    console.log("✅ /tts audio generated successfully");
 
-    return new Response(elevenRes.body, { status: 200, headers });
+    return new Response(elevenRes.body, {
+      status: 200,
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*", // ✅ allow browser fetch
+      },
+    });
   } catch (err: any) {
     console.error("tts error", err);
-    return NextResponse.json({ error: String(err?.message ?? err) }, { status: 500 });
+    return NextResponse.json({ error: err.message ?? err }, { status: 500 });
   }
 }

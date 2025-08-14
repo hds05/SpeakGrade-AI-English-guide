@@ -1,13 +1,8 @@
-// src/app/api/level3/respond/route.ts
+// ✅ src/app/api/level3/respond/route.ts
 import { NextResponse } from "next/server";
 
-const INTERVIEWERS = [
-  { id: "int1", name: "Interviewer 1" },
-  { id: "int2", name: "Interviewer 2" },
-  { id: "int3", name: "Interviewer 3" },
-];
-
-async function callOpenAI(prompt: string, history: any[] = []) {
+// ✅ Add this function before POST
+async function callOpenAI(messages: any[]) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -16,86 +11,72 @@ async function callOpenAI(prompt: string, history: any[] = []) {
     },
     body: JSON.stringify({
       model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a panel interview assistant. Produce concise, natural follow-up questions or short comments from three interviewers. Output MUST be valid JSON array, each item { speaker: 'Interviewer 1', text: '...'}",
-        },
-        ...history,
-        { role: "user", content: prompt },
-      ],
+      messages,
       temperature: 0.6,
       max_tokens: 220,
     }),
   });
 
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`OpenAI error: ${t}`);
+    throw new Error(`OpenAI API error: ${await res.text()}`);
   }
 
   const payload = await res.json();
-  const content = payload.choices?.[0]?.message?.content ?? "";
-  return content;
+  return payload.choices?.[0]?.message?.content ?? "";
 }
 
+// ✅ Your POST handler
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    // expected: { userMessage: string, conversationHistory?: Array<{role, content}> , lastSpeaker?: 'int1'|'int2'|'int3' }
-    const userMessage: string = body.userMessage ?? "";
-    const convHistory = body.conversationHistory ?? [];
+    console.log("✅ Received body in /respond:", body);
 
-    // Build a prompt that includes the user's last answer and a short instruction for follow-ups
-    const prompt = `The candidate answered: "${userMessage}". Based on that, generate a short sequence of 1-3 lines from the interviewers.
-Output JSON array like: [{"speaker":"Interviewer 1","text":"..."}].
-Make each interviewer speak once in order (Interviewers 1→2→3), but if context suggests one should ask a follow-up, let that interviewer do it.
-Keep each text short (1-2 sentences). Do not include anything else outside the JSON.`;
+    const { userMessage, conversationHistory = [], currentSpeaker } = body;
 
-    let content = await callOpenAI(prompt, convHistory);
+    const systemMsg = {
+      role: "system",
+      content: `You are acting as ${currentSpeaker}, an interviewer in a panel interview.
+    You will ask exactly ONE question or give a short comment (max 2 sentences) to the candidate.
+    Do not answer for other interviewers. Only speak as "${currentSpeaker}". Output a JSON object like: {"speaker":"${currentSpeaker}","text":"..."}`,
+    };
+    
+    const userPrompt = {
+      role: "user",
+      content: userMessage
+        ? `The candidate just answered: "${userMessage}". Now ask your next question.`
+        : `Start the interview by greeting the candidate and asking your first question.`,
+    };
+    
+    const content = await callOpenAI([systemMsg, ...conversationHistory, userPrompt]);
+    console.log("🧠 GPT raw response:", content);
 
-    // Try to parse JSON; if the model added text around JSON attempt to extract it
     let json;
     try {
       json = JSON.parse(content);
-    } catch (err) {
-      // Try to find JSON substring
+    } catch {
       const match = content.match(/\[[\s\S]*?\]/);
       if (match) {
         try {
           json = JSON.parse(match[0]);
-        } catch (e) {
+        } catch {
           json = null;
         }
-      } else {
-        json = null;
       }
     }
 
-    // Fallback: if parsing failed, create simple deterministic response (so UI won't break)
     if (!json) {
-      const fallback = [
-        { speaker: "Interviewer 1", text: "Thanks — can you give 1-2 lines about your current role?" },
-        { speaker: "Interviewer 2", text: "What tech stack do you use most often?" },
-        { speaker: "Interviewer 3", text: "Tell us about a challenge you solved recently." },
+      console.warn("⚠️ GPT response not JSON. Falling back.");
+      json = [
+        { speaker: "Alice", text: "Thanks — can you tell me more about your background?" },
+        { speaker: "Bob", text: "What tech stack do you prefer?" },
+        { speaker: "Charlie", text: "Describe a recent project you enjoyed." },
       ];
-      return NextResponse.json({ conversation: fallback });
     }
+    console.log("📤 /respond sending:", JSON.stringify(json, null, 2)); // ✅ log API output
 
-    // Normalize speakers to our ids (model may output names)
-    const normalized = (json as any[]).map((item) => {
-      const s = String(item.speaker || item.role || "").toLowerCase();
-      let speakerId = "int1";
-      if (s.includes("2") || s.includes("interviewer 2") || s.includes("bob")) speakerId = "int2";
-      if (s.includes("3") || s.includes("interviewer 3") || s.includes("carol")) speakerId = "int3";
-      if (s.includes("1") || s.includes("interviewer 1") || s.includes("alice")) speakerId = "int1";
-      return { speaker: speakerId, text: String(item.text ?? item.content ?? "").trim() };
-    });
-
-    return NextResponse.json({ conversation: normalized });
-  } catch (e: any) {
-    console.error("respond error", e);
-    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 });
+    return NextResponse.json({ conversation: json });
+  } catch (err: any) {
+    console.error("❌ respond error", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
