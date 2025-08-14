@@ -99,7 +99,7 @@ export default function Level3() {
     interviewTimerRef.current = setTimeout(() => {
       console.log("🛑 Interview time limit reached. Stopping interview.");
       handleStopInterview(true);
-    }, 20 * 1000); // 20 seconds for now. can change it according to need..... ;-)
+    }, 40 * 1000); // 40 seconds for now. can change it according to need..... ;-)
   };
 
   // Fetch one interviewer’s question
