@@ -31,9 +31,9 @@ export default function Level3() {
   }, []);
 
   const interviewers = [
-    { name: "Bob", image: "https://static.vecteezy.com/system/resources/thumbnails/055/332/908/small_2x/3d-icon-avatar-cartoon-happy-man-with-glasses-is-smiling-and-wearing-a-white-sweater-on-cutout-transparent-background-png.png" },
+    { name: "Bob", image: "/bob.webp" },
     { name: "Charlie", image: "/old-man-avatar.png" },
-    { name: "Alice", image: "https://t4.ftcdn.net/jpg/08/70/79/11/360_F_870791115_Uf9FfGH8xZbdrtUinaJbEMKtIAVucoLE.jpg" },
+    { name: "Alice", image: "/alice.jpg" },
   ];
 // Unlock audio context on first user interaction
 const unlockAudio = () => {
