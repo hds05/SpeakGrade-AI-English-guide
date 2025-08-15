@@ -538,7 +538,7 @@ export default function Level2() {
         </div>
       ) : (
         <>
-          <Header />
+          {/* <Header /> */}
 
           {/* Background Video */}
           <video

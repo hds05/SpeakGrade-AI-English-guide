@@ -8,6 +8,7 @@ import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi'; // HeroIcons for men
 const navItems = [
   { name: 'Home', href: '/' },
   { name: 'About', href: '/#' },
+  { name: 'MainProduct', href: '/main' },
   { name: 'Features', href: '/#' },
   { name: 'Games', href: '/game' },
   { name: 'Contact', href: '/#' },

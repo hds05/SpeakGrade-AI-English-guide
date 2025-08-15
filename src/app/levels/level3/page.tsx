@@ -250,23 +250,38 @@ export default function Level3() {
         </div>
       ) : (
         <>
-          <Header />
+          {/* <Header /> */}
           {showCompletion ? (
-            <div className="relative z-20 w-full h-screen flex flex-col justify-center items-center text-center px-4 animate__animated animate__fadeInUp">
-              <Confetti className="w-full h-full" />
-              <h2 className="text-3xl mt-10 sm:text-4xl font-bold text-green-400 mb-2">
-                🎉 Conversation Completed!
-              </h2>
-              <p className="text-base sm:text-lg text-gray-700">
-                Great job! You’ve finished Level 3. Please Sign Up to know your score.😁
-              </p>
-              <button
-                className="mt-4 px-8 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
-                onClick={() => router.push("/")}
-              >
-                End
-              </button>
-            </div>
+            <div
+  className="relative z-10 w-full min-h-screen flex flex-col justify-center items-center text-center px-4 py-10 sm:py-20 bg-cover bg-center bg-no-repeat animate__animated animate__fadeInUp"
+  style={{
+    backgroundImage:
+      "url('https://cdn.prod.website-files.com/61a05ff14c09ecacc06eec05/6720e94e1cd203b14c045522_%20Interview-Notes.jpg')",
+  }}
+>
+  {/* Dark overlay */}
+  <div className="absolute inset-0 bg-black/80 z-0"></div>
+
+  {/* Confetti */}
+  <Confetti className="w-full h-full z-10" />
+
+  {/* Content */}
+  <div className="relative z-20 max-w-2xl w-full px-4">
+    <h2 className="text-2xl sm:text-4xl font-bold text-green-400 mb-4">
+      🎉 Conversation Completed!
+    </h2>
+    <p className="text-sm sm:text-lg text-white mb-6">
+      Great job! You’ve finished Level 3. Please sign up to know your score. 😁
+    </p>
+    <button
+      className="px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
+      onClick={() => router.push("/")}
+    >
+      End
+    </button>
+  </div>
+</div>
+
           ) : (
             <>
               {/* Intro Popup */}

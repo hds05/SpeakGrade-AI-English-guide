@@ -15,7 +15,7 @@ export default function Snowfall() {
 
   useEffect(() => {
     const tempFlakes: SnowflakeConfig[] = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 70; i++) {
       tempFlakes.push({
         id: i,
         left: `${Math.random() * 100}%`,
@@ -28,7 +28,7 @@ export default function Snowfall() {
   }, []);
 
   return (
-    <div className="h-screen snowfall absolute inset-0 pointer-events-none z-0">
+    <div className="w-full h-screen snowfall absolute inset-0 pointer-events-none z-0">
       {flakes.map((flake) => (
         <div
           key={flake.id}
