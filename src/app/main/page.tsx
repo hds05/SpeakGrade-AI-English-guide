@@ -9,20 +9,44 @@ export default function MainPage() {
     {
       title: 'Level 1',
       description: 'Start with basic English speaking assessment.',
-      image: '/level1.jpg', // Change to your image
+      image: '/testConvo.png',
       path: '/levels/level1',
     },
     {
       title: 'Level 2',
       description: 'Intermediate speaking test with AI feedback.',
-      image: '/level2.jpg', // Change to your image
+      image: '/barConvo.png',
       path: '/levels/level2',
     },
     {
       title: 'Level 3',
       description: 'Advanced real-time conversation challenge.',
-      image: '/level3.jpg', // Change to your image
+      image: '/interview_img.jpg', // Keep current image as requested
       path: '/levels/level3',
+    },
+    {
+      title: 'Level 4',
+      description: 'Workplace conversation with your manager.',
+      image: '/managerConvo.png',
+      path: '/levels/level4',
+    },
+    {
+      title: 'Level 5',
+      description: 'Police encounter - Explain your parking situation.',
+      image: '/policeConvo.png',
+      path: '/levels/level5',
+    },
+    {
+      title: 'Level 6',
+      description: 'Fashion Outlet - Handle multiple customer service issues.',
+      image: '/outletConvo.png',
+      path: '/levels/level6',
+    },
+    {
+      title: 'Level 7',
+      description: 'Burger Express - Fix your incorrect fast-food order.',
+      image: '/burgerConvo.png',
+      path: '/levels/level7',
     },
   ];
 
