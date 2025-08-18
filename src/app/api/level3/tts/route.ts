@@ -10,7 +10,7 @@ const VOICES: Record<string, string> = {
 export async function POST(req: Request) {
   try {
     let body = await req.json();
-    let speaker = body.speaker ?? body.conversation?.speaker ?? "Alice";
+    let speaker = body.speaker ?? body.conversation?.speaker ?? "Bob";
     let text = body.text ?? body.conversation?.text ?? "";
 
     console.log("📥 /tts received:", { speaker, text });

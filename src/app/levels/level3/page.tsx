@@ -20,6 +20,7 @@ export default function Level3() {
   const [micActive, setMicActive] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const router = useRouter();
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const interviewTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { transcript, listening, resetTranscript } = useSpeechRecognition();
@@ -35,6 +36,18 @@ export default function Level3() {
       alert("Browser doesn't support speech recognition.");
     }
   }, []);
+
+  useEffect(() => {
+    if (!interviewStarted) return; // ✅ only after Start
+    if (!listening) {
+      if (transcript.trim()) {
+        processUserAnswer(transcript);
+      } else {
+        handleNoAnswer();
+      }
+      resetTranscript();
+    }
+  }, [listening]);
 
   // ✅ Load completion state from localStorage
   useEffect(() => {
@@ -75,18 +88,25 @@ export default function Level3() {
   // };
   const startInterview = async () => {
     unlockAudio();
+
+    // clear old data
+    resetTranscript();        // ✅ clear previous transcript
+    setHistory([]);           // ✅ clear previous conversation
+    setIndex(0); // Start with Bob
+    setSpeakingIndex(0);  // Highlight Bob immediately
     setInterviewStarted(true);
     setMicActive(false);
-    setIndex(0); // Start with Bob
 
     const bobIntro =
-      "Hello and welcome, can you please tell us about yourself.";
+      "Hello and welcome...can you pleasee..tell us about yourselffff.";
 
     // Add Bob's intro to the conversation history
-    setHistory((prev) => [
-      ...prev,
-      { role: "assistant", content: bobIntro, speaker: "Bob" },
-    ]);
+    // setHistory((prev) => [
+    //   ...prev,
+    //   { role: "assistant", content: bobIntro, speaker: "Bob" },
+    // ]);
+
+    setHistory([{ role: "assistant", content: bobIntro, speaker: "Bob" }]);
 
     // Play Bob's intro voice
     await playVoice(bobIntro, "Bob");
@@ -99,7 +119,7 @@ export default function Level3() {
     interviewTimerRef.current = setTimeout(() => {
       console.log("🛑 Interview time limit reached. Stopping interview.");
       handleStopInterview(true);
-    }, 40 * 1000); // 40 seconds for now. can change it according to need..... ;-)
+    }, 30 * 1000); // 40 seconds for now. can change it according to need..... ;-)
   };
 
   // Fetch one interviewer’s question
@@ -134,13 +154,15 @@ export default function Level3() {
           { role: "assistant", content: reply, speaker: actualSpeaker },
         ]);
         await playVoice(reply, actualSpeaker);
+        setMicActive(true);
+        SpeechRecognition.startListening({ continuous: true });
       } else {
         console.warn("⚠️ No valid text to speak.");
       }
 
       // Enable mic for user’s answer
       setMicActive(true);
-      SpeechRecognition.startListening({ continuous: true });
+      // SpeechRecognition.startListening({ continuous: true });
     } catch (err) {
       console.error(err);
     } finally {
@@ -149,48 +171,141 @@ export default function Level3() {
   };
 
   // Play audio from TTS
-  const playVoice = async (text: string, speaker: string) => {
-    setSpeakingIndex(interviewers.findIndex((p) => p.name === speaker));
-    try {
-      const res = await fetch("/api/level3/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, speaker }),
-      });
+// ================= playVoice =================
+// const playVoice = async (text: string, speaker: string) => {
+//   // Stop mic while interviewer speaks
+//   SpeechRecognition.stopListening();
+//   setMicActive(false);
 
-      if (!res.ok) throw new Error("TTS failed");
+//   // Stop any previous audio
+//   if (currentAudioRef.current) {
+//     currentAudioRef.current.pause();
+//     currentAudioRef.current.src = "";
+//     currentAudioRef.current = null;
+//   }
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+//   // Highlight speaker immediately
+//   const speakerIdx = interviewers.findIndex((p) => p.name === speaker);
+//   setSpeakingIndex(speakerIdx);
 
-      await new Promise<void>((resolve, reject) => {
-        audio.onended = () => {
-          console.log(`✅ Finished speaking: ${speaker}`);
-          setSpeakingIndex(null);
-          resolve();
-        };
-        audio.onerror = reject;
-        audio.play().catch((err) => {
-          console.warn("Autoplay blocked, user interaction required:", err);
-          setSpeakingIndex(null);
-          reject(err);
-        });
-      });
-    } catch (e) {
-      console.error("playVoice error:", e);
-      setSpeakingIndex(null);
-    }
-  };
+//   try {
+//     const controller = new AbortController(); // optional: abort fetch if needed
+//     const res = await fetch("/api/level3/tts", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ text, speaker }),
+//       signal: controller.signal,
+//     });
+
+//     const blob = await res.blob();
+//     const url = URL.createObjectURL(blob);
+//     const audio = new Audio(url);
+//     currentAudioRef.current = audio;
+
+//     await new Promise<void>((resolve, reject) => {
+//       const handleEnd = () => {
+//         if (currentAudioRef.current !== audio) {
+//           URL.revokeObjectURL(url);
+//           resolve();
+//           return;
+//         }
+
+//         console.log(`✅ Finished speaking: ${speaker}`);
+//         setSpeakingIndex(null);
+//         URL.revokeObjectURL(url);
+//         currentAudioRef.current = null;
+
+//         // Restart mic only if interview is active
+//         if (interviewStarted) {
+//           setMicActive(true);
+//           SpeechRecognition.startListening({ continuous: true });
+//         }
+//         // else  {
+//         //   SpeechRecognition.startListening();
+//         //   setMicActive(false);
+//         // }
+//         // resolve();
+//       };
+
+//       audio.onended = handleEnd;
+//       audio.onerror = (e) => {
+//         if (currentAudioRef.current !== audio) {
+//           resolve(); // ignore if manually stopped
+//         } else {
+//           reject(e);
+//         }
+//       };
+
+//       audio.play().catch((e) => {
+//         if (currentAudioRef.current === audio) reject(e);
+//       });
+//     });
+//   } catch (e) {
+//     console.error("❌ playVoice error:", e);
+//     setSpeakingIndex(null);
+//   }
+// };
+const playVoice = async (text: string, speaker: string) => {
+  // Stop mic while "speaking"
+  SpeechRecognition.stopListening();
+  setMicActive(false);
+
+  // Highlight speaker immediately
+  const speakerIdx = interviewers.findIndex((p) => p.name === speaker);
+  setSpeakingIndex(speakerIdx);
+
+  // ✅ Instead of TTS, just log to console
+  console.log(`💬 ${speaker} says: "${text}"`);
+
+  // Simulate short delay to mimic speaking duration
+  await new Promise((resolve) => setTimeout(resolve, Math.min(1000 + text.length * 50, 3000)));
+
+  // Reset speaker and re-enable mic if interview is active
+  setSpeakingIndex(null);
+  if (interviewStarted) {
+    setMicActive(true);
+    SpeechRecognition.startListening({ continuous: true });
+  }
+};
 
   // When user stops speaking
-  useEffect(() => {
-    if (!listening && transcript.trim()) {
-      processUserAnswer(transcript);
-      resetTranscript();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listening]);
+  // useEffect(() => {
+  //   if (!listening) {
+  //     if (transcript.trim()) {
+  //       // ✅ User actually said something
+  //       processUserAnswer(transcript);
+  //     } else {
+  //       // 🚨 Silence detected
+  //       handleNoAnswer();
+  //     }
+  //     resetTranscript();
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [listening]);
+
+  const handleNoAnswer = async () => {
+    if (!interviewStarted) return; // ⛔ not started
+    const lastAssistant = history.find((msg) => msg.role === "assistant");
+    if (!lastAssistant) return; // ⛔ no question asked yet
+
+    console.log("🤐 User gave no response, interviewer will repeat.");
+    SpeechRecognition.stopListening();
+    setMicActive(false);
+
+    const currentInterviewer = interviewers[index].name;
+    const repeatPrompt =
+      "It seems you didn’t respond. Would you like me to repeat the question?";
+
+    setHistory((prev) => [
+      ...prev,
+      { role: "assistant", content: repeatPrompt, speaker: currentInterviewer },
+    ]);
+
+    await playVoice(repeatPrompt, currentInterviewer);
+
+    setMicActive(true);
+    SpeechRecognition.startListening({ continuous: true });
+  };
 
   // Handle user answer
   const processUserAnswer = async (answer: string) => {
@@ -220,10 +335,26 @@ export default function Level3() {
   };
 
   // Stop entire interview
-  const handleStopInterview = (isTimeUp = false) => {
+  const handleStopInterview = (isTimeUp: boolean = false) => {
     SpeechRecognition.stopListening();
+    resetTranscript();
+
     setInterviewStarted(false);
     setMicActive(false);
+    // Force full mic reset
+    if (SpeechRecognition.abortListening) {
+      SpeechRecognition.abortListening(); // kills recognition session entirely
+    }
+
+    // ✅ Stop any ongoing voice
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.onended = null;
+      currentAudioRef.current.src = "";
+      currentAudioRef.current.load(); // force reset of the <audio> element
+      currentAudioRef.current = null;
+    }
+    setSpeakingIndex(null);
 
     if (interviewTimerRef.current) {
       clearTimeout(interviewTimerRef.current);
@@ -232,18 +363,22 @@ export default function Level3() {
 
     if (isTimeUp) {
       handleCompletion();
-      setShowCompletion(true); // Show confetti on time limit
+      // setShowCompletion(true); // Show confetti on time limit
     } else {
       // Reset everything for a manual restart
       setShowIntroPopup(true);
       setHistory([]);
+      setSpeakingIndex(null);
       setIndex(0);
       setPhase("intro");
+      setShowCompletion(false);
     }
+    window.location.reload(); // forces browser to ask mic permission again on start
+
   };
 
   return (
-    <div>
+    <div className="relative w-full min-h-screen  bg-black text-white">
       {loading && !interviewStarted ? (
         <div className="bg-white">
           <Loader />
@@ -253,35 +388,38 @@ export default function Level3() {
           {/* <Header /> */}
           {showCompletion ? (
             <div
-  className="relative z-10 w-full min-h-screen flex flex-col justify-center items-center text-center px-4 py-10 sm:py-20 bg-cover bg-center bg-no-repeat animate__animated animate__fadeInUp"
-  style={{
-    backgroundImage:
-      "url('https://cdn.prod.website-files.com/61a05ff14c09ecacc06eec05/6720e94e1cd203b14c045522_%20Interview-Notes.jpg')",
-  }}
->
-  {/* Dark overlay */}
-  <div className="absolute inset-0 bg-black/80 z-0"></div>
+              className="relative z-10 w-full min-h-screen flex flex-col justify-center items-center text-center px-4 py-10 sm:py-20 bg-cover bg-center bg-no-repeat animate__animated animate__fadeInUp"
+              style={{
+                backgroundImage:
+                  "url('https://cdn.prod.website-files.com/61a05ff14c09ecacc06eec05/6720e94e1cd203b14c045522_%20Interview-Notes.jpg')",
+              }}
+            >
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-black/80 z-0"></div>
 
-  {/* Confetti */}
-  <Confetti className="w-full h-full z-10" />
+              {/* Confetti */}
+              <Confetti className="w-full h-full z-10" />
 
-  {/* Content */}
-  <div className="relative z-20 max-w-2xl w-full px-4">
-    <h2 className="text-2xl sm:text-4xl font-bold text-green-400 mb-4">
-      🎉 Conversation Completed!
-    </h2>
-    <p className="text-sm sm:text-lg text-white mb-6">
-      Great job! You’ve finished Level 3. Please sign up to know your score. 😁
-    </p>
-    <button
-      className="px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
-      onClick={() => router.push("/")}
-    >
-      End
-    </button>
-  </div>
-</div>
-
+              {/* Content */}
+              <div className="relative z-20 max-w-2xl w-full px-4">
+                <h2 className="text-2xl sm:text-4xl font-bold text-green-400 mb-4">
+                  🎉 Conversation Completed!
+                </h2>
+                <p className="text-sm sm:text-lg text-white mb-6">
+                  Great job! You’ve finished Level 3. Please sign up to know
+                  your score. 😁
+                </p>
+                <button
+                  className="px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
+                  onClick={() => {
+                    handleStopInterview(true); // ✅ stop mic + reset interview
+                    router.push("/");
+                  }}
+                >
+                  End
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               {/* Intro Popup */}

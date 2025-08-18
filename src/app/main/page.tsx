@@ -7,54 +7,62 @@ export default function MainPage() {
 
   const levels = [
     {
-      title: 'Level 1',
-      description: 'Start with basic English speaking assessment.',
+      title: 'English Guide',
+      description: 'Start with basic English speaking.',
       image: '/testConvo.png',
       path: '/levels/level1',
     },
     {
-      title: 'Level 2',
-      description: 'Intermediate speaking test with AI feedback.',
+      title: 'Bar conversation',
+      description: 'Just entered Bar. Casual conversation with Bob & Bartender.',
       image: '/barConvo.png',
       path: '/levels/level2',
     },
     {
-      title: 'Level 3',
-      description: 'Advanced real-time conversation challenge.',
+      title: 'Interview room',
+      description: 'You are sitting in a Interview room.',
       image: '/interview_img.jpg', // Keep current image as requested
       path: '/levels/level3',
     },
     {
-      title: 'Level 4',
+      title: 'Manager Meeting',
       description: 'Workplace conversation with your manager.',
       image: '/managerConvo.png',
       path: '/levels/level4',
     },
     {
-      title: 'Level 5',
+      title: 'Parking Dispute',
       description: 'Police encounter - Explain your parking situation.',
       image: '/policeConvo.png',
       path: '/levels/level5',
     },
     {
-      title: 'Level 6',
+      title: 'Outlet Rush',
       description: 'Fashion Outlet - Handle multiple customer service issues.',
       image: '/outletConvo.png',
       path: '/levels/level6',
     },
     {
-      title: 'Level 7',
+      title: 'Order Mix-up',
       description: 'Burger Express - Fix your incorrect fast-food order.',
       image: '/burgerConvo.png',
       path: '/levels/level7',
     },
+    
+    {
+      title: '911 Emergency',
+      description: 'You have called 911. Tell them your Emergency.',
+      image: '911-emergency.jpg', // Change to your image
+      path: '/levels/level8',
+    },
+
   ];
 
   return (
     <div className="relative w-full  text-white flex flex-col items-center justify-center px-6 py-12">
       
       <h1 className="text-4xl font-extrabold mb-10 text-center">
-        🚀 SpeakGrade - Choose Your Level
+        🚀 SpeakGrade - Choose Your Scenario
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">

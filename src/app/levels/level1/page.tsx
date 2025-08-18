@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Script from "next/script";
-
 import Confetti from "react-confetti";
 import { useRouter } from "next/navigation";
 import WelcomeTestPage from "@/app/components/welcome/WelcomeTest";
-import Header from "@/app/components/header/page";
 
-export default function Level1() {
+export default function EnglishGuideBot() {
   const [showPopup, setShowPopup] = useState(true);
   const [showWidget, setShowWidget] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
@@ -44,55 +42,64 @@ export default function Level1() {
   }, []);
 
   return (
-    <div>
-      {/* <Header /> */}
-      <div className="relative w-full max-w-6xl h-[80vh] sm:h-[83vh] text-white rounded-2xl overflow-hidden shadow-2xl border border-white/10 mt-10">
-        {/* Background Image */}
-        <div className="absolute inset-0 w-full h-full z-0">
-          <img
-            src="/bot-with-man.avif"
-            alt="SpeakGrade Background"
-            className="w-full h-full object-cover animate__animated animate__fadeIn"
-          />
-          <div className="absolute inset-0 bg-black/70" />
-        </div>
+    <div className="w-full min-h-screen flex justify-center items-start px-3 sm:px-6 py-6">
+      <div className="relative w-full max-w-6xl min-h-[85vh] text-white rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+{/* Background Image */}
+<div className="absolute inset-0 w-full h-full z-0">
+  {/* Large screen image */}
+  <img
+    src="/bot-with-man.avif"
+    alt="SpeakGrade Background"
+    className="hidden sm:block w-full h-full object-cover animate__animated animate__fadeIn"
+  />
+
+  {/* Small screen image */}
+  <img
+    src="https://as2.ftcdn.net/jpg/03/44/58/77/1000_F_344587784_tvDkmUpvgHnmYrUJAfTQqr2zST6KaC4J.jpg"
+    alt="SpeakGrade Mobile Background"
+    className="block sm:hidden w-full h-full object-cover animate__animated animate__fadeIn"
+  />
+
+  <div className="absolute inset-0 bg-black/70" />
+</div>
+
 
         {/* Glow */}
-        <div className="absolute -top-10 -left-10 w-72 h-72 bg-purple-500/30 rounded-full blur-3xl animate-pulse z-10" />
-        <div className="absolute -bottom-10 -right-10 w-72 h-72 bg-pink-500/20 rounded-full blur-2xl animate-pulse z-10" />
+        <div className="absolute -top-10 -left-10 w-60 h-60 sm:w-72 sm:h-72 bg-purple-500/30 rounded-full blur-3xl animate-pulse z-10" />
+        <div className="absolute -bottom-10 -right-10 w-60 h-60 sm:w-72 sm:h-72 bg-pink-500/20 rounded-full blur-2xl animate-pulse z-10" />
 
         {/* Completion Screen */}
         {showCompletion ? (
-          <div className="relative z-20 h-screen flex flex-col justify-center items-center text-center px-4 animate__animated animate__fadeInUp">
-            <Confetti />
-            <h2 className="text-3xl sm:text-4xl font-bold text-green-400 mb-2">
+          <div className="relative z-10 min-h-[85vh] flex flex-col justify-center items-center text-center px-4 animate__animated animate__fadeInUp">
+            <Confetti style={{width:'100%'}}/>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-400 mb-2">
               🎉 Test Completed!
             </h2>
-            <p className="text-base sm:text-lg text-gray-300">
+            <p className="text-sm sm:text-base md:text-lg text-gray-300 max-w-md">
               Thanks for participating! Your results are being processed.
             </p>
             <button
-              className="inline-block mt-4 px-8 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
+              className="inline-block mt-6 px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
               onClick={() => router.push("/levels/level2")}
             >
               Next Level
             </button>
           </div>
         ) : (
-          <div className="h-full overflow-y-scroll scrollbar-hidden px-4 py-6 sm:px-6 sm:py-8 space-y-10 z-10 relative">
+          <div className="h-full overflow-y-auto scrollbar-hidden px-3 sm:px-6 py-6 sm:py-8 space-y-10 z-10 relative">
             {/* Title */}
             <div className="z-20 relative text-center space-y-4">
-              <div className="flex justify-center mb-6">
+              <div className="flex justify-center mb-4 sm:mb-6">
                 <img
                   src="/speakgrade_logo.png"
                   alt="SpeakGrade Logo"
-                  className="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-full border-4 border-white/20 shadow-xl"
+                  className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-full border-4 border-white/20 shadow-xl"
                 />
               </div>
-              <h1 className="text-4xl sm:text-5xl font-extrabold">
+              <h1 className="font-extrabold text-[clamp(1.8rem,5vw,3rem)] leading-snug">
                 🚀 SpeakGrade - AI English Fluency Guide
               </h1>
-              <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+              <p className="text-gray-300 max-w-2xl mx-auto text-xs sm:text-sm md:text-base leading-relaxed">
                 Elevate your spoken English with real-time AI assessment. Speak
                 naturally, and get instant feedback on fluency, grammar,
                 vocabulary, and clarity — all in just 3 minutes.
@@ -100,7 +107,7 @@ export default function Level1() {
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 z-20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 z-20">
               {[
                 {
                   title: "🎙 Real-Time Speaking",
@@ -121,10 +128,12 @@ export default function Level1() {
               ].map((feature, idx) => (
                 <div
                   key={idx}
-                  className="bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/10 shadow-lg hover:bg-white/20 transition-all duration-300"
+                  className="bg-white/10 backdrop-blur-sm p-4 sm:p-6 rounded-xl border border-white/10 shadow-lg hover:bg-white/20 transition-all duration-300"
                 >
-                  <h2 className="text-xl font-bold">{feature.title}</h2>
-                  <p className="mt-2 text-gray-300">{feature.desc}</p>
+                  <h2 className="text-lg sm:text-xl font-bold">{feature.title}</h2>
+                  <p className="mt-2 text-gray-300 text-sm sm:text-base">
+                    {feature.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -133,7 +142,7 @@ export default function Level1() {
             {showWidget && (
               <>
                 <div
-                  className="z-20 relative"
+                  className="z-20 relative w-full flex justify-center"
                   dangerouslySetInnerHTML={{
                     __html: `<elevenlabs-convai agent-id="agent_4501k1tk0ntff8rv8et3d804erbq"></elevenlabs-convai>`,
                   }}
@@ -144,10 +153,11 @@ export default function Level1() {
                 />
               </>
             )}
+
             {/* Welcome Popup */}
             {showPopup && (
-              <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
-                <div className="relative max-w-3xl w-full p-4">
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 px-3">
+                <div className="relative w-full max-w-3xl">
                   <WelcomeTestPage onClose={handleClose} />
                 </div>
               </div>

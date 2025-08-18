@@ -157,3 +157,12 @@ body {
 
 /* ===== /Hide scrollbar while keeping scroll functionality===== */
 
+/* ===== Elevenlabs widget positioning===== */
+#elevenlabs-widget {
+  position: fixed !important;
+  bottom: 20px;  /* change to top, left, etc. */
+  left: 20px;    /* or right: 20px; */
+  z-index: 9999; /* keep it above everything */
+}
+
+/* ===== /Elevenlabs widget positioning===== */
