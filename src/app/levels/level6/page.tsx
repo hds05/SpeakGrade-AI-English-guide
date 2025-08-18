@@ -274,7 +274,7 @@ export default function Level6() {
   const resolvedCount = Object.values(issuesResolved).filter(Boolean).length;
 
   return (
-    <div>
+    <div className="relative w-full min-h-screen  bg-black text-white">
       {loading && !conversationStarted ? (
         <div className="bg-white">
           <Loader />
@@ -360,7 +360,7 @@ export default function Level6() {
                 </p>
                 <button
                   className="px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-green-500 hover:text-white"
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push("/main")}
                 >
                   Finish Shopping
                 </button>

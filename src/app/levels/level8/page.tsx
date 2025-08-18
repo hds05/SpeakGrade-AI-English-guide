@@ -216,12 +216,12 @@ export default function Level8() {
               🎉 Conversation Completed!
             </h2>
             <p className="text-sm sm:text-lg text-white mb-6">
-              Great job! You’ve finished Level 4. Please sign up to know your
+              Great job! You’ve finished Level 8. Please sign up to know your
               score. 😁
             </p>
             <button
               className="px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/main")}
             >
               End
             </button>

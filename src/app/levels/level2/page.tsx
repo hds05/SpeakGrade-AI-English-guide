@@ -566,9 +566,9 @@ export default function Level2() {
               </p>
               <button
                 className="mt-4 px-8 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
-                onClick={() => router.push("/levels/level3")}
+                onClick={() => router.push("/main")}
               >
-                Next Level
+                End Session
               </button>
             </div>
           ) : (

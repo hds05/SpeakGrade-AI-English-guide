@@ -291,7 +291,7 @@ export default function Level7() {
   const addressedCount = Object.values(orderIssues).filter(Boolean).length;
 
   return (
-    <div>
+    <div className="relative w-full min-h-screen  bg-black text-white">
       {loading && !conversationStarted ? (
         <div className="bg-white">
           <Loader />
@@ -377,7 +377,7 @@ export default function Level7() {
                 </p>
                 <button
                   className="px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-orange-500 hover:text-white"
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push("/main")}
                 >
                   Leave Restaurant
                 </button>

@@ -44,25 +44,24 @@ export default function EnglishGuideBot() {
   return (
     <div className="w-full min-h-screen flex justify-center items-start px-3 sm:px-6 py-6">
       <div className="relative w-full max-w-6xl min-h-[85vh] text-white rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-{/* Background Image */}
-<div className="absolute inset-0 w-full h-full z-0">
-  {/* Large screen image */}
-  <img
-    src="/bot-with-man.avif"
-    alt="SpeakGrade Background"
-    className="hidden sm:block w-full h-full object-cover animate__animated animate__fadeIn"
-  />
+        {/* Background Image */}
+        <div className="absolute inset-0 w-full h-full z-0">
+          {/* Large screen image */}
+          <img
+            src="/bot-with-man.avif"
+            alt="SpeakGrade Background"
+            className="hidden sm:block w-full h-full object-cover animate__animated animate__fadeIn"
+          />
 
-  {/* Small screen image */}
-  <img
-    src="https://as2.ftcdn.net/jpg/03/44/58/77/1000_F_344587784_tvDkmUpvgHnmYrUJAfTQqr2zST6KaC4J.jpg"
-    alt="SpeakGrade Mobile Background"
-    className="block sm:hidden w-full h-full object-cover animate__animated animate__fadeIn"
-  />
+          {/* Small screen image */}
+          <img
+            src="https://as2.ftcdn.net/jpg/03/44/58/77/1000_F_344587784_tvDkmUpvgHnmYrUJAfTQqr2zST6KaC4J.jpg"
+            alt="SpeakGrade Mobile Background"
+            className="block sm:hidden w-full h-full object-cover animate__animated animate__fadeIn"
+          />
 
-  <div className="absolute inset-0 bg-black/70" />
-</div>
-
+          <div className="absolute inset-0 bg-black/70" />
+        </div>
 
         {/* Glow */}
         <div className="absolute -top-10 -left-10 w-60 h-60 sm:w-72 sm:h-72 bg-purple-500/30 rounded-full blur-3xl animate-pulse z-10" />
@@ -71,7 +70,7 @@ export default function EnglishGuideBot() {
         {/* Completion Screen */}
         {showCompletion ? (
           <div className="relative z-10 min-h-[85vh] flex flex-col justify-center items-center text-center px-4 animate__animated animate__fadeInUp">
-            <Confetti style={{width:'100%'}}/>
+            <Confetti style={{ width: "100%" }} />
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-400 mb-2">
               🎉 Test Completed!
             </h2>
@@ -80,9 +79,9 @@ export default function EnglishGuideBot() {
             </p>
             <button
               className="inline-block mt-6 px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-violet-500 hover:text-white"
-              onClick={() => router.push("/levels/level2")}
+              onClick={() => router.push("/main")}
             >
-              Next Level
+              End Session
             </button>
           </div>
         ) : (
@@ -130,7 +129,9 @@ export default function EnglishGuideBot() {
                   key={idx}
                   className="bg-white/10 backdrop-blur-sm p-4 sm:p-6 rounded-xl border border-white/10 shadow-lg hover:bg-white/20 transition-all duration-300"
                 >
-                  <h2 className="text-lg sm:text-xl font-bold">{feature.title}</h2>
+                  <h2 className="text-lg sm:text-xl font-bold">
+                    {feature.title}
+                  </h2>
                   <p className="mt-2 text-gray-300 text-sm sm:text-base">
                     {feature.desc}
                   </p>

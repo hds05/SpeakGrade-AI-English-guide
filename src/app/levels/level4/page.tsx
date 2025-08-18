@@ -257,7 +257,7 @@ export default function Level4() {
   const weeklyUpdateParagraph = `This week I made three Facebook ads for our new clothing campaign. I worked with the design team to choose pictures and write short texts for each ad. I also posted four photos on Instagram to promote our summer sale. I checked how last week's ads performed — one ad had 25% more clicks than usual. I did a short survey online to see what styles people liked most, and I found that bright colors were the top choice. On Friday, I made a short two-page report with these results for the manager.`;
 
   return (
-    <div>
+    <div className="relative w-full min-h-screen  bg-black text-white">
       {loading && !conversationStarted ? (
         <div className="bg-white">
           <Loader />
@@ -320,7 +320,7 @@ export default function Level4() {
                 </p>
                 <button
                   className="px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-blue-500 hover:text-white"
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push("/main")}
                 >
                   End Session
                 </button>

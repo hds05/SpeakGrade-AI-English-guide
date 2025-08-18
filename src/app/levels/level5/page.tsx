@@ -265,7 +265,7 @@ export default function Level5() {
   const factParagraph = `At 9:15 this morning, you stopped your bakery delivery van in a no‑parking zone in front of Green Leaf Café because every other parking spot nearby was taken. You had to deliver a three‑tier wedding cake directly to the café's manager — it couldn't be left unattended. You switched on your hazard lights, carried the cake inside, and were gone for less than one minute. When you came back, I had already written the ticket. You have your delivery schedule and a signed receipt from the café manager to prove the delivery.`;
 
   return (
-    <div>
+    <div className="relative w-full min-h-screen  bg-black text-white">
       {loading && !conversationStarted ? (
         <div className="bg-white">
           <Loader />
@@ -350,7 +350,7 @@ export default function Level5() {
                 </p>
                 <button
                   className="px-6 py-3 bg-white text-black font-semibold rounded-full transition duration-300 shadow-lg hover:bg-blue-500 hover:text-white"
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push("/main")}
                 >
                   End Encounter
                 </button>
